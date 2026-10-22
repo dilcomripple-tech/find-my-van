@@ -61,7 +61,17 @@
 // use the camera, so this page does the live scan and hands the VIN over.
 const APP_URL = 'https://script.google.com/macros/s/AKfycbw9xSHobQdXKm9lAML1hPzhUghj7TNdFiDw3J9-HeaPfWdRhlX-d6hzKyUzmMZJoIps/exec';
 const $ = id => document.getElementById(id);
-['typeLink', 'typeLink2', 'typeLink3'].forEach(id => { $(id).href = APP_URL; });
+// ?page=checkin = came from the DII5 Morning Check-In link: go back to that one, not Park My Van (2026-10-22).
+// ?da=NAME (who the driver is, when a link carries it) is passed back too so it isn't lost.
+const QS = new URLSearchParams(location.search), DA = QS.get('da') || '', CHECKIN = QS.get('page') === 'checkin';
+const DA_Q = [CHECKIN ? 'page=checkin' : '', DA ? 'da=' + encodeURIComponent(DA) : ''].filter(Boolean).join('&');
+['typeLink', 'typeLink2', 'typeLink3'].forEach(id => { $(id).href = APP_URL + (DA_Q ? '?' + DA_Q : ''); });
+if (CHECKIN) {
+  document.title = 'DII5 - Morning Check-In · Scan';
+  document.querySelector('header h1').textContent = 'DII5 - Morning Check-In';
+  $('typeLink').textContent = 'Enter my info myself';
+  ['typeLink2', 'typeLink3'].forEach(id => { $(id).textContent = 'No card? Enter my info myself'; });
+}
 
 let stream = null, track = null, detector = null, busy = false, done = false, torchOn = false;
 const canvas = document.createElement('canvas');
@@ -150,7 +160,7 @@ function found(text) {
   $('msg').innerHTML = 'Got it! Opening your van…';
   if (navigator.vibrate) navigator.vibrate(80);
   stop();
-  location.href = APP_URL + '?van=' + encodeURIComponent(String(text).trim());
+  location.href = APP_URL + '?van=' + encodeURIComponent(String(text).trim()) + (DA_Q ? '&' + DA_Q : '');
 }
 
 $('torch').addEventListener('click', async () => {
